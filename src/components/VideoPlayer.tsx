@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Volume2, VolumeX, Play, Pause, Settings, Subtitles } from 'lucide-react';
+import { X, Volume2, VolumeX, Play, Pause, Settings, Subtitles, Maximize, Minimize } from 'lucide-react';
 import { YouTubeVideo } from '@/types/youtube';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
@@ -59,6 +59,7 @@ export function VideoPlayer({ video, isOpen, onClose }: VideoPlayerProps) {
   const [captionsEnabled, setCaptionsEnabled] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [isApiReady, setIsApiReady] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Load YouTube IFrame API
   useEffect(() => {
@@ -209,6 +210,32 @@ export function VideoPlayer({ video, isOpen, onClose }: VideoPlayerProps) {
     }
     setCaptionsEnabled(!captionsEnabled);
   }, [captionsEnabled]);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!containerRef.current) return;
+    
+    if (!document.fullscreenElement) {
+      containerRef.current.requestFullscreen().then(() => {
+        setIsFullscreen(true);
+      }).catch((err) => {
+        console.error('Fullscreen error:', err);
+      });
+    } else {
+      document.exitFullscreen().then(() => {
+        setIsFullscreen(false);
+      });
+    }
+  }, []);
+
+  // Listen for fullscreen changes (e.g., when user presses Escape)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -391,6 +418,19 @@ export function VideoPlayer({ video, isOpen, onClose }: VideoPlayerProps) {
                     </DropdownMenuSub>
                   </DropdownMenuContent>
                 </DropdownMenu>
+
+                {/* Fullscreen */}
+                <button
+                  onClick={toggleFullscreen}
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors"
+                  title={isFullscreen ? "Sair da tela cheia" : "Tela cheia"}
+                >
+                  {isFullscreen ? (
+                    <Minimize className="w-5 h-5 text-white" />
+                  ) : (
+                    <Maximize className="w-5 h-5 text-white" />
+                  )}
+                </button>
               </div>
             </div>
           </div>

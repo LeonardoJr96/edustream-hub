@@ -3,12 +3,20 @@ import { Play, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface HeroSectionProps {
-  video: YouTubeVideo;
+  video: YouTubeVideo | null | undefined;
   onPlay: (video: YouTubeVideo) => void;
   onMoreInfo?: (video: YouTubeVideo) => void;
 }
 
 export function HeroSection({ video, onPlay, onMoreInfo }: HeroSectionProps) {
+  if (!video) {
+    return (
+      <div className="relative h-[70vh] md:h-[80vh] w-full bg-background flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Carregando...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative h-[70vh] md:h-[80vh] w-full">
       {/* Background image */}

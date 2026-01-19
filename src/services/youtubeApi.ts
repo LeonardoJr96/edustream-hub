@@ -5,54 +5,6 @@ import { YouTubeVideo, YouTubeSearchResult, YouTubeLiveStatus } from '@/types/yo
 const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY || '';
 const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3';
 
-// Cache configuration
-const CACHE_KEYS = {
-  SEARCH: (query: string, channelId: string) => `yt_search_${channelId}_${query}`,
-  CHANNEL_VIDEOS: (channelId: string) => `yt_channel_${channelId}`,
-  LIVE_STATUS: (channelId: string) => `yt_live_${channelId}`,
-};
-const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
-
-// Cache storage interface
-interface CacheEntry<T> {
-  data: T;
-  timestamp: number;
-}
-
-// Get cached data if still valid
-function getFromCache<T>(key: string): T | null {
-  try {
-    const cached = localStorage.getItem(key);
-    if (!cached) return null;
-    
-    const entry: CacheEntry<T> = JSON.parse(cached);
-    const isExpired = Date.now() - entry.timestamp > CACHE_DURATION;
-    
-    if (isExpired) {
-      localStorage.removeItem(key);
-      return null;
-    }
-    
-    return entry.data;
-  } catch (error) {
-    console.error('Cache read error:', error);
-    return null;
-  }
-}
-
-// Store data in cache
-function setInCache<T>(key: string, data: T): void {
-  try {
-    const entry: CacheEntry<T> = {
-      data,
-      timestamp: Date.now(),
-    };
-    localStorage.setItem(key, JSON.stringify(entry));
-  } catch (error) {
-    console.error('Cache write error:', error);
-  }
-}
-
 // Helper to format duration from ISO 8601 to readable format
 function formatDuration(isoDuration: string): string {
   if (!isoDuration) return '';
@@ -91,15 +43,6 @@ export async function fetchChannelVideos(
   if (!YOUTUBE_API_KEY) {
     console.warn('YouTube API key not configured');
     return { videos: [], totalResults: 0 };
-  }
-
-  // Check cache first (only for first page)
-  if (!pageToken) {
-    const cached = getFromCache<YouTubeSearchResult>(CACHE_KEYS.CHANNEL_VIDEOS(channelId));
-    if (cached) {
-      console.log('Using cached channel videos');
-      return cached;
-    }
   }
 
   try {
@@ -148,18 +91,11 @@ export async function fetchChannelVideos(
       liveBroadcastContent: item.snippet.liveBroadcastContent || 'none',
     }));
 
-    const result = {
+    return {
       videos,
       nextPageToken: searchData.nextPageToken,
       totalResults: searchData.pageInfo?.totalResults || videos.length,
     };
-
-    // Cache the result
-    if (!pageToken) {
-      setInCache(CACHE_KEYS.CHANNEL_VIDEOS(channelId), result);
-    }
-
-    return result;
   } catch (error) {
     console.error('Error fetching channel videos:', error);
     return { videos: [], totalResults: 0 };
@@ -221,14 +157,6 @@ export async function searchVideos(
     return [];
   }
 
-  // Check cache first
-  const cacheKey = CACHE_KEYS.SEARCH(query, channelId);
-  const cached = getFromCache<YouTubeVideo[]>(cacheKey);
-  if (cached) {
-    console.log('Using cached search results for query:', query);
-    return cached;
-  }
-
   try {
     const searchUrl = new URL(`${YOUTUBE_API_BASE}/search`);
     searchUrl.searchParams.set('key', YOUTUBE_API_KEY);
@@ -255,7 +183,7 @@ export async function searchVideos(
     const videosResponse = await fetch(videosUrl.toString());
     const videosData = await videosResponse.json();
 
-    const results = videosData.items.map((item: any) => ({
+    return videosData.items.map((item: any) => ({
       id: item.id,
       title: item.snippet.title,
       description: item.snippet.description,
@@ -268,11 +196,6 @@ export async function searchVideos(
       isLive: item.snippet.liveBroadcastContent === 'live',
       liveBroadcastContent: item.snippet.liveBroadcastContent || 'none',
     }));
-
-    // Cache the results
-    setInCache(cacheKey, results);
-
-    return results;
   } catch (error) {
     console.error('Error searching videos:', error);
     return [];

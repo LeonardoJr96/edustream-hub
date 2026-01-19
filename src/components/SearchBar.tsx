@@ -19,12 +19,6 @@ export function SearchBar({ onSearch, onClear, placeholder = 'Buscar vídeos...'
     }
   }, [isExpanded]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setQuery(value);
-    onSearch(value); // Trigger search on every change (debounced in hook)
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
@@ -68,7 +62,7 @@ export function SearchBar({ onSearch, onClear, placeholder = 'Buscar vídeos...'
               ref={inputRef}
               type="text"
               value={query}
-              onChange={handleInputChange}
+              onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
               className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground placeholder:text-muted-foreground"

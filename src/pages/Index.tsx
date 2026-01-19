@@ -5,10 +5,10 @@ import { VideoCarousel } from '@/components/VideoCarousel';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { useYouTubeVideos, useYouTubeLiveStatus, useYouTubeSearch, useYouTubeCategories } from '@/hooks/useYouTube';
 import { YouTubeVideo } from '@/types/youtube';
-{/* import { getFeaturedVideo } from '@/services/mockData'; */}
+import { getFeaturedVideo } from '@/services/mockData';
 
 const Index = () => {
-  const { videos, loading, error } = useYouTubeVideos();
+  const { videos, loading } = useYouTubeVideos();
   const { liveStatus } = useYouTubeLiveStatus();
   const { results: searchResults, search, clearSearch, query } = useYouTubeSearch();
   const { categories } = useYouTubeCategories();
@@ -26,27 +26,11 @@ const Index = () => {
     setSelectedVideo(null);
   };
 
-  const featuredVideo =
-  liveStatus.isLive && liveStatus.liveVideo
-    ? liveStatus.liveVideo
-    : videos.length > 0
-    ? videos[0]
-    : null;
+  const featuredVideo = liveStatus.isLive && liveStatus.liveVideo 
+    ? liveStatus.liveVideo 
+    : getFeaturedVideo();
 
   const isSearching = query.length > 0;
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Carregando vídeos...</p>
-      </div>
-    );
-  }
-
-
-  if (error) {
-    return <p>Erro ao carregar vídeos</p>;
-  }
 
   return (
     <div className="min-h-screen bg-background">

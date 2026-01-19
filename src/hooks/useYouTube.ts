@@ -31,7 +31,7 @@ export function useYouTubeVideos() {
     async function loadVideos() {
       setLoading(true);
       setError(null);
-      console.log(USE_MOCK_DATA)
+
       if (USE_MOCK_DATA) {
         // Use mock data if no API key
         setVideos(mockVideos);
